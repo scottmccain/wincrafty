@@ -498,7 +498,9 @@ int EGTB_setup = 0;
 #endif
 int xboard = 0;
 int pong = 0;
-int usesocket=0;
+int socket_mode=0;
+int pipe_mode=0;
+HANDLE pipe_handle;
 int early_exit = 99;
 int new_game = 0;
 char book_path[128] = { BOOKDIR };

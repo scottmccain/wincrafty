@@ -51,3 +51,5 @@
 #include "test.c"
 #include "time.c"
 #include "validate.c"
+#include "socket.c"
+#include "pipe.c"

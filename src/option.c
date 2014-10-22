@@ -3919,9 +3919,10 @@ int Option(TREE * RESTRICT tree) {
     }
   }
   else if (OptionMatch("usesocket", *args)) {
-	  usesocket = 1;
+	  socket_mode = 1;
   }
-
+  else if(OptionMatch("pipe", *args)) {
+  }
 /*
  ************************************************************
  *                                                          *

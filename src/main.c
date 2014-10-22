@@ -4093,8 +4093,21 @@ int main(int argc, char **argv) {
     Print(4095, "feature done=0\n");
     done = 0;
   } else if (argc > 1 && !strcmp(argv[1], "usesocket")) {
-    Print(4095, "wait for socket!\n");
+    Print(4095, "waiting for socket connection ...\n");
+
+	// couldn't initialize sockets, so we exit
+	if(init_sockets())
+		CraftyExit(1);
+
     done = 0;
+  } else if (argc > 1 && !strcmp(argv[1], "pipe")) {
+
+	Print(4095, "waiting for pipe connection ...\n");
+
+	// open the pipe here
+	done = open_pipe("chesspipe");
+
+	done = 0;
   }
 /*
  ************************************************************

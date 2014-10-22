@@ -248,6 +248,9 @@ unsigned char *BookOut64(uint64_t val) {
   return convert_buff;
 }
 
+int check_pipe() {
+	return 0;
+}
 /*
  *******************************************************************************
  *                                                                             *
@@ -264,9 +267,14 @@ unsigned char *BookOut64(uint64_t val) {
 /* Windows NT using PeekNamedPipe() function */
 int CheckInput(void) {
   int i;
-  static int init = 0, pipe;
+  static int init = 0, pipestdin;
   static HANDLE inh;
   DWORD dw;
+
+  if(pipe_mode)
+	  return check_pipe();
+  if(socket_mode)
+	  return check_socket();
 
   if (!xboard && !isatty(fileno(stdin)))
     return 0;
@@ -282,18 +290,23 @@ int CheckInput(void) {
     if (!init) {
       init = 1;
       inh = GetStdHandle(STD_INPUT_HANDLE);
-      pipe = !GetConsoleMode(inh, &dw);
-      if (!pipe) {
+      pipestdin = !GetConsoleMode(inh, &dw);
+      if (!pipestdin) {
         SetConsoleMode(inh, dw & ~(ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT));
         FlushConsoleInputBuffer(inh);
       }
     }
-    if (pipe) {
+    if (pipestdin) {
       if (!PeekNamedPipe(inh, NULL, 0, NULL, &dw, NULL)) {
         return 1;
       }
       return dw;
-    } else {
+    //} else if(pipe_mode) {
+      //if (!PeekNamedPipe(pipe_handle, NULL, 0, NULL, &dw, NULL)) {
+      //  return 1;
+      //}
+      //return dw;
+	} else {
       GetNumberOfConsoleInputEvents(inh, &dw);
       return dw <= 1 ? 0 : dw;
     }
@@ -474,6 +487,12 @@ void CraftyExit(int exit_type) {
   for (proc = 1; proc < CPUS; proc++)
     thread[proc].tree = (TREE *) - 1;
   while (smp_threads);
+
+  if(socket_mode)
+  {
+	  shutdown_sockets();
+  }
+
   exit(exit_type);
 }
 
@@ -1977,22 +1996,40 @@ int ReadInput(void) {
   char buffer[4096], *end;
   int bytes;
 
-  do
-    bytes = read(fileno(input_stream), buffer, 2048);
-  while (bytes < 0 && errno == EINTR);
-  if (bytes == 0) {
-    if (input_stream != stdin)
-      fclose(input_stream);
-    input_stream = stdin;
-    return 0;
-  } else if (bytes < 0) {
-    Print(4095, "ERROR!  input I/O stream is unreadable, exiting.\n");
-    CraftyExit(1);
+  if(socket_mode)
+  {
+	  bytes = recv(ClientSocket, &buffer, 2048, 0);
+	  if(bytes <= 0)
+	  {
+		Print(4095, "ERROR!  socket stream is unreadable, exiting.\n");
+		CraftyExit(1);
+	  }
   }
-  end = cmd_buffer + strlen(cmd_buffer);
-  memcpy(end, buffer, bytes);
-  *(end + bytes) = 0;
-  return 1;
+  else
+  {
+	  do
+		bytes = read(fileno(input_stream), buffer, 2048);
+	  while (bytes < 0 && errno == EINTR);
+
+	  if (bytes == 0) 
+	  {
+		if (input_stream != stdin)
+		  fclose(input_stream);
+
+		input_stream = stdin;
+		return 0;
+	  } 
+	  else if (bytes < 0) 
+	  {
+		Print(4095, "ERROR!  input I/O stream is unreadable, exiting.\n");
+		CraftyExit(1);
+	  }
+  }
+
+	end = cmd_buffer + strlen(cmd_buffer);
+	memcpy(end, buffer, bytes);
+	*(end + bytes) = 0;
+	return 1;
 }
 
 /*

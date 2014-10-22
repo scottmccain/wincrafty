@@ -298,7 +298,7 @@ typedef struct thread {
 #  define GENERATE_ALL_MOVES        9
 #  define HISTORY_MOVES            10
 #  define REMAINING_MOVES          11
-#if defined(UNIX) && !defined(INLINEASM)
+#if defined(UNIX) || !defined(INLINEASM)
 int CDECL PopCnt(uint64_t);
 int CDECL MSB(uint64_t);
 int CDECL LSB(uint64_t);
@@ -503,6 +503,14 @@ extern void WinFreeInterleaved(void *, size_t);
 #      define FreeInterleaved(pMemory, cBytes)    free(pMemory)
 #    endif
 #  endif
+
+int init_sockets();
+void shutdown_sockets();
+int check_socket();
+int read_socket(char *, unsigned int);
+
+int open_pipe(char *);
+
 #  define Abs(a)    (((a) > 0) ? (a) : -(a))
 #  define Max(a,b)  (((a) > (b)) ? (a) : (b))
 #  define Min(a,b)  (((a) < (b)) ? (a) : (b))
